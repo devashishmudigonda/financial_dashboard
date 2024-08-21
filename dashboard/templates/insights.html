@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insights</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        header {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        .container {
+            width: 90%;
+            margin: 20px auto;
+            max-width: 1200px;
+            text-align: center;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .insights {
+            text-align: left;
+            margin: 20px 0;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+        .insight-item {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Insights Page</h1>
+    </header>
+    <div class="container">
+        <!-- Back to Home Button -->
+        <button onclick="window.location.href='{% url 'index' %}';">Back to Home</button>
+
+        <!-- Insights Section -->
+        <div class="insights">
+            <h2>Data Insights</h2>
+            {% if insights %}
+                {% for insight in insights %}
+                    <p class="insight-item">{{ insight }}</p>
+                {% endfor %}
+            {% else %}
+                <p>No insights available at the moment.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

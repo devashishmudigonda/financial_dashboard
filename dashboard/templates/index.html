@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Data Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        header {
+            background-color: #3498db;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        .container {
+            width: 90%;
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+        form, button {
+            display: inline-block;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        canvas {
+            margin: 10px 0;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background-color: #fff;
+        }
+        #statusMessage {
+            font-weight: bold;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Financial Data Dashboard</h1>
+    </header>
+    <div class="container">
+        <form action="{% url 'run_import_script' %}" method="post">
+            {% csrf_token %}
+            <button type="submit">CREATE DATABASE</button>
+        </form>
+        <button id="viewAggregatedData">View Aggregated Data</button>
+        <button id="viewInsights">Insights</button>
+        <div id="loading">
+            <div class="spinner"></div>
+            <p>Loading data...</p>
+        </div>
+        <div>
+            <div>
+                <div class="chart-heading">Bar Chart: Total Amount by Category</div>
+                <canvas id="categoryChart" width="400" height="200"></canvas>
+            
+                <div class="chart-heading">Pie Chart: Total Amount by Gender</div>
+                <canvas id="genderChart" width="400" height="200"></canvas>
+            
+                <div class="chart-heading">Bar Chart: Total Amount by Merchant</div>
+                <canvas id="merchantChart" width="400" height="200"></canvas>
+            
+                <div class="chart-heading">Pie Chart: Total Amount by Fraud Status</div>
+                <canvas id="fraudChart" width="400" height="200"></canvas>
+            
+                <div class="chart-heading">Pie Chart: Total Amount by Expense Type</div>
+                <canvas id="expenseTypeChart" width="400" height="200"></canvas>
+            </div>
+            <p id="statusMessage"></p>
+        </div>
+    </div>
+    <script>
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        document.getElementById('viewAggregatedData').addEventListener('click', function() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('statusMessage').textContent = '';
+
+            fetch('/api/financial-data/')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.data) {
+                        throw new Error("Data format is incorrect. 'data' key is missing.");
+                    }
+
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('statusMessage').textContent = 'Data successfully loaded.';
+
+                    const dataArray = data.data;
+
+                    const categoryData = dataArray.reduce((acc, item) => {
+                        const category = String(item.category).replace(/'/g, "");
+                        acc[category] = (acc[category] || 0) + parseFloat(item.amount);
+                        return acc;
+                    }, {});
+
+                    const categoryLabels = Object.keys(categoryData);
+                    const categoryValues = Object.values(categoryData);
+
+                    new Chart(document.getElementById('categoryChart'), {
+                        type: 'bar',
+                        data: {
+                            labels: categoryLabels,
+                            datasets: [{
+                                label: 'Total Amount by Category',
+                                data: categoryValues,
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                borderColor: 'rgba(75, 192, 192, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Category'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Amount'
+                                    },
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+
+                    const genderData = dataArray.reduce((acc, item) => {
+    const gender = String(item.gender).replace(/'/g, "");
+    acc[gender] = (acc[gender] || 0) + parseFloat(item.amount);
+    return acc;
+}, {});
+
+const genderLabels = Object.keys(genderData);
+const genderValues = Object.values(genderData);
+
+new Chart(document.getElementById('genderChart'), {
+    type: 'bar',
+    data: {
+        labels: genderLabels,
+        datasets: [{
+            label: 'Total Amount by Gender',
+            data: genderValues,
+            backgroundColor: genderLabels.map(() => getRandomColor()),
+            borderColor: genderLabels.map(() => getRandomColor()),
+            borderWidth: 1
+        }]
+    },
+    options: {
+        scales: {
+            x: {
+                title: {
+                    display: true,
+                    text: 'Gender'
+                }
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: 'Amount'
+                },
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+                    const merchantData = dataArray.reduce((acc, item) => {
+                        const merchant = String(item.merchant).replace(/'/g, "");
+                        acc[merchant] = (acc[merchant] || 0) + parseFloat(item.amount);
+                        return acc;
+                    }, {});
+
+                    const merchantLabels = Object.keys(merchantData);
+                    const merchantValues = Object.values(merchantData);
+
+                    new Chart(document.getElementById('merchantChart'), {
+                        type: 'bar',
+                        data: {
+                            labels: merchantLabels,
+                            datasets: [{
+                                label: 'Total Amount by Merchant',
+                                data: merchantValues,
+                                backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                                borderColor: 'rgba(255, 159, 64, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Merchant'
+                                    }
+                                },
+                                y: {
+                                    title: {
+                                        display: true,
+                                        text: 'Amount'
+                                    },
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+
+                    // Process fraud data
+const fraudData = dataArray.reduce((acc, item) => {
+    const fraudStatus = String(item.fraud).replace(/'/g, "");
+    const fraudLabel = fraudStatus === "0" ? "NO FRAUD" : "FRAUD";
+    acc[fraudLabel] = (acc[fraudLabel] || 0) + parseFloat(item.amount);
+    return acc;
+}, {});
+
+const fraudLabels = Object.keys(fraudData);
+const fraudValues = Object.values(fraudData);
+
+new Chart(document.getElementById('fraudChart'), {
+    type: 'pie',
+    data: {
+        labels: fraudLabels,
+        datasets: [{
+            label: 'Total Amount by Fraud Status',
+            data: fraudValues,
+            backgroundColor: fraudLabels.map(() => getRandomColor()),
+            borderColor: fraudLabels.map(() => getRandomColor()),
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(tooltipItem) {
+                        return `${tooltipItem.label}: $${tooltipItem.raw}`;
+                    }
+                }
+            }
+        }
+    }
+});
+
+                    const expenseTypeData = dataArray.reduce((acc, item) => {
+                        const expenseType = String(item.category).replace(/'/g, "");
+                        acc[expenseType] = (acc[expenseType] || 0) + parseFloat(item.amount);
+                        return acc;
+                    }, {});
+
+                    const expenseTypeLabels = Object.keys(expenseTypeData);
+                    const expenseTypeValues = Object.values(expenseTypeData);
+
+new Chart(document.getElementById('expenseTypeChart'), {
+    type: 'pie',
+    data: {
+        labels: expenseTypeLabels,
+        datasets: [{
+            label: 'Total Amount by Expense Type',
+            data: expenseTypeValues,
+            backgroundColor: expenseTypeLabels.map(() => getRandomColor()),
+            borderColor: expenseTypeLabels.map(() => getRandomColor()),
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(tooltipItem) {
+                        return `${tooltipItem.label}: $${tooltipItem.raw}`;
+                    }
+                }
+            }
+        }
+    }
+});
+
+})
+.catch(error => {
+document.getElementById('loading').style.display = 'none';
+document.getElementById('statusMessage').textContent = 'Failed to load data: ' + error.message;
+});
+});
+
+document.getElementById('viewInsights').addEventListener('click', function() {
+window.location.href = '{% url "insights" %}';
+});
+
+document.getElementById('viewAggregatedData').addEventListener('click', function () {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('statusMessage').textContent = '';
+
+        fetch('/api/financial-data/')
+            .then(response => response.json())
+            .then(data => {
+                if (!data.data) {
+                    throw new Error("Data format is incorrect. 'data' key is missing.");
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('statusMessage').textContent = 'Data successfully loaded.';
+
+                const dataArray = data.data;
+
+                const existingInsights = document.getElementById('insightsContainer');
+                if (existingInsights) {
+                    existingInsights.remove();
+                }
+
+                generateCharts(dataArray);
+
+                const insights = generateInsights(dataArray);
+                displayInsights(insights);
+
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('statusMessage').textContent = 'Failed to load data: ' + error.message;
+            });
+    });
+
+    function generateCharts(dataArray) {
+        const categoryData = dataArray.reduce((acc, item) => {
+            const category = String(item.category).replace(/'/g, "");
+            acc[category] = (acc[category] || 0) + parseFloat(item.amount);
+            return acc;
+        }, {});
+
+        const categoryLabels = Object.keys(categoryData);
+        const categoryValues = Object.values(categoryData);
+
+        new Chart(document.getElementById('categoryChart'), {
+            type: 'bar',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    label: 'Total Amount by Category',
+                    data: categoryValues,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    x: { title: { display: true, text: 'Category' } },
+                    y: { title: { display: true, text: 'Amount' }, beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    function generateInsights(dataArray) {
+        let insights = [];
+
+        const categoryData = dataArray.reduce((acc, item) => {
+            const category = String(item.category).replace(/'/g, "");
+            acc[category] = (acc[category] || 0) + parseFloat(item.amount);
+            return acc;
+        }, {});
+
+        const highestSpendingCategory = Object.keys(categoryData).reduce((a, b) => categoryData[a] > categoryData[b] ? a : b);
+        insights.push(`The highest spending category is "${highestSpendingCategory}" with a total of $${categoryData[highestSpendingCategory].toFixed(2)}.`);
+
+        const genderData = dataArray.reduce((acc, item) => {
+            const gender = String(item.gender).replace(/'/g, "");
+            acc[gender] = (acc[gender] || 0) + parseFloat(item.amount);
+            return acc;
+        }, {});
+
+        const highestSpendingGender = Object.keys(genderData).reduce((a, b) => genderData[a] > genderData[b] ? a : b);
+        insights.push(`The gender with the highest spending is "${highestSpendingGender}" with a total of $${genderData[highestSpendingGender].toFixed(2)}.`);
+
+        return insights;
+    }
+
+    function displayInsights(insights) {
+        const insightsContainer = document.createElement('div');
+        insightsContainer.id = 'insightsContainer';
+        insightsContainer.style.marginTop = '20px';
+
+        const insightsTitle = document.createElement('h3');
+        insightsTitle.textContent = 'Data Insights';
+        insightsContainer.appendChild(insightsTitle);
+
+        insights.forEach(insight => {
+            const insightElement = document.createElement('p');
+            insightElement.textContent = insight;
+            insightsContainer.appendChild(insightElement);
+        });
+
+        document.querySelector('.container').appendChild(insightsContainer);
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "manage.py",
+        "use": "@vercel/python",
+        "config": {
+          "maxLambdaSize": "50mb"
+        }
+      }
+    ],
+    "routes": [
+      {
+        "src": "/static/(.*)",
+        "dest": "/static/$1"
+      },
+      {
+        "src": "/media/(.*)",
+        "dest": "/media/$1"
+      },
+      {
+        "src": "/(.*)",
+        "dest": "manage.py"
+      }
+    ],
+    "env": {
+      "DJANGO_SETTINGS_MODULE": "financial_dashboard.settings",
+      "SECRET_KEY": "django-insecure-kt1drqylls%q38$(4&=@q&so+8jm-(k1$+yx91q@z#0od2230h",
+      "DEBUG": "False",
+      "ALLOWED_HOSTS": ".vercel.app"
+    }
+  }
