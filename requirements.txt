@@ -1,7 +1,7 @@
 asgiref==3.8.1
 contourpy==1.2.1
 cycler==0.12.1
-Django>=4.2
+Django>=4.2,<5.0  # Adjust version to match Djongo compatibility
 django-rest-auth==0.9.5
 djangorestframework==3.15.2
 djangorestframework-simplejwt==5.3.1
@@ -20,5 +20,5 @@ pyparsing==3.1.2
 python-dateutil==2.9.0.post0
 pytz==2024.1
 six==1.16.0
-sqlparse==0.2.4
+sqlparse==0.2.4  # Ensure compatibility with Django version
 tzdata==2024.1
